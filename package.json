@@ -1,6 +1,6 @@
 {
   "name": "tiny-seeder",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "description": "A tiny seeder to generate a simple SQL file to populate your database",
   "main": "./lib/index.js",
   "files": [
@@ -25,7 +25,9 @@
   },
   "author": "Natto-PKP",
   "license": "Apache-2.0 License",
-  "dependencies": {},
+  "dependencies": {
+    "tslib": "^2.3.1"
+  },
   "devDependencies": {
     "@types/node": "^16.11.9",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
