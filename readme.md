@@ -1,101 +1,134 @@
 # Tiny-seeder
 
-A module to create a simple SQL file to populate your development database
+Populate your database with a simple SQL file
 
 ```bash
 $ npm i tiny-seeder
 ```
 
+## Documentations
+
+- [Seeder](./documentation/Seeder.md)
+- [Utils](./documentation/Utils.md)
+
 ## Getting started
 
-> First of all, you need to drop your tables and recreate them. In order to reset the counters of the primary keys (Required for the proper functioning of the script)
+- `npm i tiny-seeder @faker-js/faker`
 
-### # Install modules
-
-- `npm i tiny-seeder community-faker`
-
-I use [community-faker](https://www.npmjs.com/package/community-faker) for generate random data
-
-### # Create data folder and a javascript file
+### # Data folder and javascript file creation
 
 - `mkdir ./data`
-- `cd ./data`
-- `touch generate.js`
+- `touch ./data/seeder.js`
 
-### # Open yout javascript file (generate.js)
+### # Javascript file content examples (seeder.js)
 
 ```js
-const { seeder } = require('tiny-seeder');
-const faker = require('community-faker');
+const { Seeder } = require('tiny-seeder');
+const { faker } = require('@faker-js/faker');
+const { v4: UUID } = require('uuid');
 
-seeder([
-  // first table
+const tables = [
+  // First table
   {
-    name: 'user',
-    rows: 50,
-    columns: {
-      firstname: faker.name.firstName,
-      middlename: { nullable: true, type: faker.name.middleName },
-      lastname: faker.name.lastName,
-      email: { type: faker.internet.email, unique: true },
-      age: () => Math.floor(Math.random() * 26),
-    },
-  },
-  // second table
-  {
-    name: 'cookies',
+    name: 'company',
     rows: 40,
+    uniques: ['suffix', 'name'],
     columns: {
-      id: 'auto',
-      user_id: { to: 'user', unique: true },
-      stock: () => Math.floor(Math.random() * 50),
-      eating: () => Math.floor(Math.random() * 4),
+      suffix: faker.company.companySuffix,
+      name: faker.company.companyName,
+      description: faker.company.catchPhrase,
+      site: faker.internet.url,
     },
   },
-]);
+
+  // Second table with first table relation
+  {
+    name: 'product',
+    rows: 500,
+    columns: {
+      name: faker.commerce.productName,
+      description: faker.commerce.productDescription,
+      department: faker.commerce.department,
+      image: faker.image.imageUrl,
+      color: { type: faker.commerce.color, nullable: true },
+      price: faker.commerce.price,
+      company_id: { to: 'company' },
+    },
+  },
+
+  // Last table
+  {
+    name: 'client',
+    rows: 80,
+    columns: {
+      uuid: { primary: true, type: UUID },
+      username: faker.internet.userName,
+      email: { type: faker.internet.email, unique: true },
+      password: faker.internet.password,
+    },
+  },
+];
+
+const seeder = new Seeder(tables, { directory: './data', truncate: true });
+
+seeder.generate();
 ```
+
+<details>
+  <summary>Other example</summary>
+
+```js
+const { Seeder } = require('tiny-seeder');
+const { faker } = require('@faker-js/faker');
+const { v4: UUID } = require('uuid');
+
+const seeder = new Seeder(null, { directory: './data' });
+
+seeder.add({
+  name: 'company',
+  rows: 40,
+  uniques: ['suffix', 'name'],
+  columns: {
+    suffix: faker.company.companySuffix,
+    name: faker.company.companyName,
+    description: faker.company.catchPhrase,
+    site: faker.internet.url,
+  },
+});
+
+seeder.add({
+  name: 'product',
+  rows: 500,
+  columns: {
+    name: faker.commerce.productName,
+    description: faker.commerce.productDescription,
+    department: faker.commerce.department,
+    image: faker.image.imageUrl,
+    color: { type: faker.commerce.color, nullable: true },
+    price: faker.commerce.price,
+    company_id: { to: 'company' },
+  },
+});
+
+seeder.add({
+  name: 'client',
+  rows: 80,
+  columns: {
+    uuid: { primary: true, type: UUID },
+    username: faker.internet.userName,
+    email: { type: faker.internet.email, unique: true },
+    password: faker.internet.password,
+  },
+});
+
+seeder.remove('client');
+
+seeder.generate();
+```
+
+</details>
 
 ### # Execute your file !
 
 - `node ./data/generate.js`
-
-TADA !!! SQL file created !
-
-## Documentation
-
-| property             | value                  | optional | description                                     |
-| :------------------- | :--------------------- | :------- | :---------------------------------------------- |
-| name                 | string                 | false    | name of table                                   |
-| rows                 | number                 | false    | number of rows to insert                        |
-| uniques              | string[]               | true     | couple of unique key                            |
-| columns              | object                 | false    | columns of table                                |
-| columns.key          |                        |          | key is column name                              |
-| columns.key          | [type](#type) / object | false    | unction to generate random data / column option |
-| columns.key.literal  | string                 | true     | literal is not escaped                          |
-| columns.key.nullable | boolean                | true     | true for this column is possibility null        |
-| columns.key.primary  | boolean                | true     | define primary key                              |
-| columns.key.to       | string                 | true     | name of relation table                          |
-| columns.key.type     | [type](#type)          | true     | function to generate random data                |
-| columns.key.unique   | boolean                | true     | define unique column                            |
-
-> **WARNING**: If you get a RangeError, check the row count of the related tables. You may be asking too much
-
-> If a table refers to a table that does not have a primary key, the primary key will be 'auto' so the row number
-
-### incompatible properties
-
-- **literal** not compatible with primary, to, type, unique
-- **nullable** not compatible with primary
-- **primary** not compatible with literal, nullable, to, unique
-- **to** not compatible with type, primary, literal
-- **type** not compatible with literal, to
-- **unique** not compatible with primary
-
-## Typings
-
-### Type
-
-|      value      | description          |
-| :-------------: | :------------------- |
-|    `'auto'`     | use row index        |
-| `() => unknown` | generate random data |
+- Check sql rendering in [this file](./data/seeds-example.sql)

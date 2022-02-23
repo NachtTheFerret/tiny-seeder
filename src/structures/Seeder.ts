@@ -1,48 +1,90 @@
-import { writeFileSync } from 'fs';
+import { existsSync, lstatSync, writeFileSync } from 'fs';
 import path from 'path';
-
-import utils from './utils';
+import { Utils } from './Utils';
 
 /* Types */
-import type { Insert, Inserts, Row, Value, Table } from '../typings';
+import type Types from '../../typings';
 
-/**
- * Generate random data and create sql file
- * @param { Table[] } tables
- */
-export function seeder(tables: Table[]): void {
-  if (!Array.isArray(tables)) throw Error('tables must be an array');
-  if (!tables.length) throw Error("tables can't be empty");
+export class Seeder implements Types.Seeder {
+  private inserts = <Types.Inserts>[];
+  private path: string;
+  public tables = <Types.Table[]>[];
 
-  // ? loop all tables
-  const inserts = <Inserts>[];
-  for (const table of tables) {
-    if (typeof table.name !== 'string') throw TypeError(`name of table "${table.name}" must be a string`);
-    if (typeof table.rows !== 'number') throw TypeError(`rows of table "${table.name}" must be a number`);
-    if (typeof table.columns !== 'object') throw TypeError(`columns of table "${table.name}" must be an object`);
+  /**
+   * @param tables
+   * @param options
+   * @example
+   * const tables = [
+   *  {
+   *    name: 'company',
+   *    rows: 40,
+   *    unique: ['suffix', 'name'],
+   *    columns: {
+   *      suffix: faker.company.companySuffix,
+   *      name: faker.company.companyName,
+   *      description: faker.company.catchPhrase,
+   *      site: faker.internet.url,
+   *    }
+   *  }
+   * ]
+   *
+   * const seeder = new Seeder(tables, { directory: './data', truncate: true })
+   */
+  public constructor(tables?: Types.Table[] | null, private options: Types.SeederOptions = {}) {
+    if (Array.isArray(tables) && tables.length) tables.forEach((table) => this.add(table));
+
+    this.path = path.join(process.cwd(), options.directory || './');
+    if (!existsSync(this.path)) throw Error('path does not exist');
+    if (!lstatSync(this.path).isDirectory()) throw Error('path is not a directory');
+  }
+
+  /**
+   * Add new table
+   * @param param0
+   * @returns
+   * @example
+   * seeder.add({
+   *  name: 'company',
+   *  rows: 40,
+   *  uniques: ['suffix', 'name'],
+   *  columns: {
+   *    suffix: faker.company.companySuffix,
+   *    name: faker.company.companyName,
+   *    description: faker.company.catchPhrase,
+   *    site: faker.internet.url,
+   *  },
+   * })
+   */
+  public add(table: Types.Table): void {
+    const { name, rows } = table;
+
+    if (!name || typeof name !== 'string') throw TypeError('table name must be a string');
+    if (!rows || typeof rows !== 'number') throw TypeError(`table "${name}" :: rows must be a number`);
+    if (!table.columns || Array.isArray(table.columns) || typeof table.columns !== 'object')
+      throw TypeError(`table "${name}" :: columns must be an object`);
 
     const columns = Object.entries(table.columns);
-    if (!columns.length) throw Error(`columns of table "${table.name}" must not be empty`);
+    if (!columns.length) throw Error(`table "${name}" :: columns must not be empty`);
 
-    const insert = <Insert>{ columns: table.columns, rows: [], name: table.name };
+    const insert = <Types.Insert>{ columns: table.columns, rows: [], name };
 
-    // ? loop rows
-    for (let i = 0; i < table.rows; i++) {
-      const row = <Row>[];
+    // ? loop table rows
+    for (let i = 0; i < rows; i += 1) {
+      const row = <Types.Row>[];
 
-      // ? loop columns of table
+      // ? loop table columns
       for (let y = 0; y < columns.length; y++) {
         const [key, value] = columns[y];
         const config = typeof value === 'object' ? value : null;
-        let gen: () => Value; // generate function
+        let gen: () => Types.Value; // generate function
 
         // # primary key
         if (key === 'id' || (config && config.primary)) {
           if (config?.literal) throw Error(`key "${key}" on table "${table.name}" can't be primary and literal`);
           if (config?.nullable) throw Error(`key "${key}" on table "${table.name}" can't be primary and null`);
           if (config?.to) throw Error(`key "${key}" on table "${table.name}" can't be primary and foreign key`);
-          if (config?.unique || (Array.isArray(table.uniques) && table.uniques.includes(key)))
-            throw Error(`key "${key}" on table "${table.name}" can't be primary and unique key`);
+          // if (config?.unique || (Array.isArray(table.uniques) && table.uniques.includes(key)))
+          //   throw Error(`key "${key}" on table "${table.name}" can't be primary and unique key`);
           const base = typeof value === 'object' ? value.type : value;
           const type = base === 'auto' ? () => i + 1 : typeof base === 'function' ? base : null;
           if (!type) throw Error(`key "${key}" on table "${table.name}" has no type for data generator`);
@@ -58,7 +100,7 @@ export function seeder(tables: Table[]): void {
           if (config.literal) throw Error(`key "${key}" on table "${table.name}" can't be foreign key and literal`);
           if (config.primary) throw Error(`key "${key}" on table "${table.name}" can't be foreign key and primary`);
           if (config.type) throw Error(`key "${key}" on table "${table.name}" can't be foreign key and type`);
-          const toTable = inserts.find((ins) => ins.name === config.to);
+          const toTable = this.inserts.find((ins) => ins.name === config.to);
           if (!toTable) throw Error(`table "${config.to}" must be loaded before table "${table.name}"`);
           const primary = Object.entries(toTable.columns).findIndex(
             ([k, v]) => k === 'id' || (typeof v === 'object' && v.primary)
@@ -129,32 +171,81 @@ export function seeder(tables: Table[]): void {
           };
         } // [end] key is unique
 
-        row.push(
-          config && config.nullable ? (Math.random() < 0.75 ? gen() : { literal: 'NULL', value: null, gen }) : gen()
-        );
+        if (config && config.nullable) row.push(Math.random() < 0.75 ? gen() : { literal: 'NULL', value: null, gen });
+        else row.push(gen());
       } // [end] loop columns of table
 
       insert.rows.push(row);
     } // [end] loop rows
 
-    inserts.push(insert);
-  } // [end] loop all tables
-
-  // # write block
-  const blocks = <string[]>[];
-  for (const { columns, name, rows } of inserts) {
-    const lines = <string[]>[];
-
-    for (const row of rows) {
-      const line = <string[]>[];
-      for (const value of row) line.push(utils.resolve(value));
-      lines.push(`(${line.join(', ')})`);
-    }
-
-    blocks.push(
-      `-- Table: ${name}\nINSERT INTO "${name}" ("${Object.keys(columns).join('", "')}") VALUES\n${lines.join(',\n')};`
-    );
+    this.tables.push(table);
+    this.inserts.push(insert);
   }
 
-  writeFileSync(path.join(process.cwd(), 'seeds.sql'), ['BEGIN;', blocks.join('\n\n'), 'COMMIT;'].join('\n\n'));
+  /**
+   * Get a table
+   * @param name
+   * @returns
+   */
+  public get(name: string): Types.Table | null {
+    const table = this.tables.find((tbl) => tbl.name === name);
+    return table || null;
+  }
+
+  /**
+   * Generate your sql file
+   */
+  public generate(): void {
+    const truncates = <string[]>[];
+
+    const blocks = this.inserts.map(({ columns, name, rows }) => {
+      if (this.options.truncate) truncates.push(name);
+      const lines = rows.map((row) => `(${row.map((value) => Utils.resolve(value)).join(', ')})`);
+      const keys = Object.keys(columns);
+
+      return `-- Table: ${name}\nINSERT INTO "${name}" ("${keys.join('", "')}") VALUES\n${lines.join(',\n')};`;
+    });
+
+    const results = ['BEGIN;'];
+    if (truncates.length)
+      results.push(`-- Drop current data and indexes\nTRUNCATE ${truncates.join(', ')} RESTART IDENTITY;`);
+    results.push(blocks.join('\n\n'), 'COMMIT;');
+
+    writeFileSync(path.join(this.path, `seeds-${Date.now()}.sql`), results.join('\n\n'));
+  }
+
+  /**
+   * Check if table exist
+   * @param name
+   * @returns
+   */
+  public has(name: string): boolean {
+    return this.tables.some((tbl) => tbl.name === name);
+  }
+
+  /**
+   * Remove table
+   * @param name
+   * @returns
+   */
+  public remove(name: string): Types.Table | null {
+    const tableIndex = this.tables.findIndex((tbl) => tbl.name === name);
+    const table = this.tables[tableIndex];
+
+    if (!table) return null;
+    this.tables.splice(tableIndex, 1);
+
+    const insertIndex = this.inserts.findIndex((tbl) => tbl.name === name);
+    if (insertIndex >= 0) this.inserts.splice(insertIndex, 1);
+
+    return table;
+  }
+
+  /**
+   * Remove all tables
+   */
+  public reset(): void {
+    this.tables = [];
+    this.inserts = [];
+  }
 }

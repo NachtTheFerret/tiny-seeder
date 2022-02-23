@@ -1,4 +1,5 @@
 # Environnement
 node_modules
 package-lock.json
+dist
 lib

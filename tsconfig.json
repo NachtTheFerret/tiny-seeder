@@ -1,6 +1,6 @@
 {
   "include": ["src"],
-  "exclude": ["node_modules", "lib"],
+  "exclude": ["node_modules", "dist"],
 
   "compilerOptions": {
     //! Type Checking
@@ -35,7 +35,7 @@
     "inlineSources": true,
     "newLine": "lf",
     "noEmitHelpers": true,
-    "outDir": "lib",
+    "outDir": "dist",
     "preserveConstEnums": true,
     "removeComments": false,
     "sourceMap": true,
