@@ -208,7 +208,7 @@ export class Seeder implements Types.Seeder {
 
     const results = ['BEGIN;'];
     if (truncates.length)
-      results.push(`-- Drop current data and indexes\nTRUNCATE ${truncates.join(', ')} RESTART IDENTITY;`);
+      results.push(`-- Drop current data and indexes\nTRUNCATE "${truncates.join('", "')}" RESTART IDENTITY;`);
     results.push(blocks.join('\n\n'), 'COMMIT;');
 
     writeFileSync(path.join(this.path, `seeds-${Date.now()}.sql`), results.join('\n\n'));

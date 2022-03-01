@@ -40,6 +40,13 @@ const tables = <Table[]>[
       password: faker.internet.password,
     },
   },
+  {
+    name: 'random',
+    rows: 80,
+    columns: {
+      caca: { nullable: 's' },
+    },
+  },
 ];
 
 describe('seeder tool', () => {
