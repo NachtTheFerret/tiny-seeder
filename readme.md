@@ -1,19 +1,16 @@
 # Tiny-seeder
 
-Populate your database with a simple SQL file
+Populate your database with a simple SQL or JSON file
+
+## [Documentation here](https://docs.tiny-seeder.sucrose.xyz/)
 
 ```bash
-$ npm i tiny-seeder
+$ npm i -D tiny-seeder
 ```
-
-## Documentations
-
-- [Seeder](./documentation/Seeder.md)
-- [Utils](./documentation/Utils.md)
 
 ## Getting started
 
-- `npm i tiny-seeder @faker-js/faker`
+- `npm i -D tiny-seeder @faker-js/faker`
 
 ### # Data folder and javascript file creation
 

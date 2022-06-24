@@ -5,33 +5,37 @@
 
   "overrides": [
     {
-      "files": ["src/**/*.ts", "src/**/*.d.ts"],
+      "files": ["**/*.js"],
+      "env": { "node": true },
+      "extends": ["airbnb-base"]
+    },
+    {
+      "files": ["src/**/*.ts", "src/**/*.d.ts", "typings/*.d.ts"],
       "env": { "node": true },
       "plugins": ["@typescript-eslint"],
-      "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended"
-      ],
+      "extends": ["airbnb-base", "airbnb-typescript/base"],
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "ecmaVersion": "latest",
         "sourceType": "module",
-        "project": ["tsconfig.json"]
+        "project": "tsconfig.json"
+      },
+      "rules": {
+        "import/no-cycle": 0,
+        "no-bitwise": 0
       }
     },
     {
-      "files": ["tests/*.test.ts"],
+      "files": ["tests/**/*.test.ts"],
       "env": { "jest": true, "node": true },
       "plugins": ["@typescript-eslint", "jest"],
-      "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:prettier/recommended",
-        "plugin:jest/all"
-      ],
+      "extends": ["airbnb-base", "airbnb-typescript/base", "plugin:jest/all"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "project": "tsconfig.jest.json"
+      },
       "rules": {
         "jest/no-hooks": ["error", { "allow": ["beforeAll", "afterAll"] }]
       }

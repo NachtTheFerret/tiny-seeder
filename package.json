@@ -1,16 +1,16 @@
 {
   "name": "tiny-seeder",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "A tiny seeder to generate a simple SQL file to populate your database",
   "main": "./dist/index.js",
   "files": [
     "dist",
-    "typings",
-    "readme.md"
+    "typings"
   ],
   "types": "./typings/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "docs": "typedoc typings/index.d.ts --out docs",
     "prepare": "npm run build",
     "test": "jest"
   },
@@ -26,9 +26,6 @@
   },
   "author": "Natto-PKP",
   "license": "Apache-2.0 License",
-  "dependencies": {
-    "tslib": "^2.3.1"
-  },
   "devDependencies": {
     "@faker-js/faker": "^6.0.0-alpha.7",
     "@types/jest": "^27.4.0",
@@ -37,14 +34,16 @@
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "eslint": "^8.2.0",
-    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-plugin-jest": "^26.1.1",
-    "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.5.1",
     "prettier": "^2.4.1",
     "ts-jest": "^27.1.3",
     "ts-node": "^10.4.0",
     "ts-node-dev": "^1.1.8",
+    "tslib": "^2.3.1",
+    "typedoc": "^0.22.17",
     "typescript": "^4.5.2",
     "uuid": "^8.3.2"
   }

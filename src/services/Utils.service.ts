@@ -1,18 +1,19 @@
 import path from 'path';
-import { readdirSync, readFileSync, existsSync, lstatSync } from 'fs';
+import {
+  readdirSync, readFileSync, existsSync, lstatSync,
+} from 'fs';
 
 /* Types */
 import type Types from '../../typings';
 
-export class Utils implements Types.Utils {
+/**
+ * @public
+ */
+export default class Utils {
   /**
-   * Contact sql files
-   * @param paths
-   * @returns
-   * @example
-   * Utils.contact('./path/to/directory')
-   * Utils.contact('./path/to/directory', './path/to/file.sql', './path/to/other-file.sql')
-   * Utils.contact('./path/to/file.sql', './path/to/other-file.sql')
+   * concat multiple sql seeds file
+   * @param paths - sql file path
+   * @returns { string }
    */
   static concat(...paths: string[]): string {
     const results = ['BEGIN;'];
@@ -38,16 +39,16 @@ export class Utils implements Types.Utils {
   }
 
   /**
-   * Get stringify value for sql
-   * @param param0
-   * @returns
+   * @internal
+   * @param param0 - value
+   * @returns { string }
    */
   static resolve({ value, literal }: Types.Value): string {
     if (value !== null) {
-      if (typeof value === 'number') return (value || 0) + '';
-      if (typeof value === 'boolean') return value + '';
+      if (typeof value === 'number') return `${value || 0}`;
+      if (typeof value === 'boolean') return `${value}`;
       if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
       return `'${(<string>value).replace(/'/g, "''")}'`;
-    } else return literal + '';
+    } return `${literal}`;
   }
 }

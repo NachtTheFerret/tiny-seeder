@@ -1,2 +1,2 @@
-export { Seeder } from './structures/Seeder';
-export { Utils } from './structures/Utils';
+export { default as Seeder } from './services/Seeder.service';
+export { default as Utils } from './services/Utils.service';
